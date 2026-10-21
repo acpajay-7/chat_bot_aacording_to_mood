@@ -1,9 +1,12 @@
 
 import streamlit as st
-from transformers import pipeline
 import torch
+from transformers import pipeline
 
-# ---------------- PAGE CONFIG ----------------
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
+
 st.set_page_config(
     page_title="Moodly AI | Your Mood Chatbot",
     page_icon="💬",
@@ -11,145 +14,203 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ---------------- CUSTOM CSS ----------------
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+# ============================================================
+# CUSTOM CSS
+# ============================================================
 
-.stApp {
-    background: radial-gradient(ellipse at top left, #202044 0%, #10111b 45%, #090b12 100%);
-    color: #f4f4ff;
-    font-family: 'Inter', sans-serif;
-}
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-header[data-testid="stHeader"] {
-    background: transparent;
-}
+    .stApp {
+        background: radial-gradient(
+            ellipse at top left,
+            #202044 0%, #10111b 45%, #090b12 100%
+        );
+        color: #f4f4ff;
+        font-family: 'Inter', sans-serif;
+    }
 
-.block-container {
-    max-width: 1100px;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
 
-.hero {
-    background: linear-gradient(135deg, #29274e, #191b31 65%, #252044);
-    border: 1px solid rgba(167,139,250,.25);
-    border-radius: 24px;
-    padding: 30px;
-    margin-bottom: 24px;
-    box-shadow: 0 15px 50px rgba(0,0,0,.20);
-}
+    .block-container {
+        max-width: 1100px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
 
-.eyebrow {
-    color: #b9a5ff;
-    text-transform: uppercase;
-    font-size: 12px;
-    letter-spacing: 3px;
-    font-weight: 800;
-}
+    .hero {
+        background: linear-gradient(135deg, #29274e, #191b31 65%, #252044);
+        border: 1px solid rgba(167,139,250,.25);
+        border-radius: 24px;
+        padding: 30px;
+        margin-bottom: 24px;
+        box-shadow: 0 15px 50px rgba(0,0,0,.20);
+    }
 
-.hero h1 {
-    font-size: clamp(32px, 5vw, 48px);
-    font-weight: 800;
-    margin: 8px 0;
-    color: #ffffff;
-}
+    .eyebrow {
+        color: #b9a5ff;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 3px;
+        font-weight: 800;
+    }
 
-.hero p {
-    color: #c6c7df;
-    font-size: 15px;
-    line-height: 1.7;
-    margin-bottom: 0;
-}
+    .hero h1 {
+        font-size: clamp(32px, 5vw, 48px);
+        font-weight: 800;
+        margin: 8px 0;
+        color: #ffffff;
+    }
 
-.status {
-    display: inline-block;
-    background: rgba(74,222,128,.12);
-    color: #86efac;
-    border: 1px solid rgba(74,222,128,.3);
-    border-radius: 30px;
-    padding: 6px 12px;
-    font-size: 12px;
-    margin-top: 16px;
-}
+    .hero p {
+        color: #c6c7df;
+        font-size: 15px;
+        line-height: 1.7;
+        margin-bottom: 0;
+    }
 
-section[data-testid="stSidebar"] {
-    background: #111320;
-    border-right: 1px solid #282a40;
-}
+    .status {
+        display: inline-block;
+        background: rgba(74,222,128,.12);
+        color: #86efac;
+        border: 1px solid rgba(74,222,128,.3);
+        border-radius: 30px;
+        padding: 6px 12px;
+        font-size: 12px;
+        margin-top: 16px;
+    }
 
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    color: #e9e6ff;
-}
+    section[data-testid="stSidebar"] {
+        background: #111320;
+        border-right: 1px solid #282a40;
+    }
 
-div[data-testid="stChatMessage"] {
-    background: rgba(28,30,49,.8);
-    border: 1px solid rgba(160,160,210,.12);
-    border-radius: 18px;
-    padding: 14px;
-    margin-bottom: 12px;
-}
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        color: #e9e6ff;
+    }
 
-div[data-testid="stChatInput"] {
-    border: 1px solid #6554a5;
-    border-radius: 18px;
-    background: #171827;
-}
+    div[data-testid="stChatMessage"] {
+        background: rgba(28,30,49,.8);
+        border: 1px solid rgba(160,160,210,.12);
+        border-radius: 18px;
+        padding: 14px;
+        margin-bottom: 12px;
+    }
 
-div[data-testid="stChatInput"] textarea {
-    color: white;
-}
+    div[data-testid="stChatInput"] {
+        border: 1px solid #6554a5;
+        border-radius: 18px;
+        background: #171827;
+    }
 
-.stButton > button {
-    border-radius: 12px;
-    border: 1px solid #5c4a94;
-    background: linear-gradient(135deg, #7557dc, #5942a8);
-    color: white;
-    font-weight: 600;
-    min-height: 42px;
-    transition: .2s ease;
-}
+    div[data-testid="stChatInput"] textarea {
+        color: white;
+    }
 
-.stButton > button:hover {
-    border-color: #b9a5ff;
-    color: white;
-    transform: translateY(-1px);
-}
+    .stButton > button {
+        border-radius: 12px;
+        border: 1px solid #5c4a94;
+        background: linear-gradient(135deg, #7557dc, #5942a8);
+        color: white;
+        font-weight: 600;
+        min-height: 42px;
+        transition: .2s ease;
+    }
 
-div[data-testid="stAlert"] {
-    border-radius: 14px;
-}
+    .stButton > button:hover {
+        border-color: #b9a5ff;
+        color: white;
+        transform: translateY(-1px);
+    }
 
-.small-note {
-    color: #9295b3;
-    font-size: 12px;
-    line-height: 1.6;
-}
+    div[data-testid="stAlert"] {
+        border-radius: 14px;
+    }
 
-div[data-testid="stMarkdownContainer"] p {
-    line-height: 1.7;
-}
-</style>
-""", unsafe_allow_html=True)
+    .small-note {
+        color: #9295b3;
+        font-size: 12px;
+        line-height: 1.6;
+    }
 
+    div[data-testid="stMarkdownContainer"] p {
+        line-height: 1.7;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# ---------------- MODEL ----------------
-MODEL_NAME = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+# ============================================================
+# MODEL CONFIGURATION
+# ============================================================
+
+# Smaller model for testing on resource-limited cloud servers.
+MODEL_NAME = "HuggingFaceTB/SmolLM2-135M-Instruct"
+
 
 @st.cache_resource(show_spinner=False)
 def load_chatbot():
+    """
+    Load the model once and reuse it across Streamlit reruns.
+    """
     device = 0 if torch.cuda.is_available() else -1
 
-    return pipeline(
-        "text-generation",
+    chatbot = pipeline(
+        task="text-generation",
         model=MODEL_NAME,
         device=device,
     )
 
+    return chatbot
 
-# ---------------- MOOD SETTINGS ----------------
+
+def generate_reply(model, conversation, max_tokens, temperature):
+    """
+    Generate a response from the chat messages and extract
+    the assistant's reply.
+    """
+    result = model(
+        conversation,
+        max_new_tokens=max_tokens,
+        do_sample=True,
+        temperature=temperature,
+        return_full_text=False,
+    )
+
+    generated = result[0]["generated_text"]
+
+    # Chat-template pipelines can return message dictionaries.
+    if isinstance(generated, list):
+        assistant_messages = [
+            message
+            for message in generated
+            if isinstance(message, dict)
+            and message.get("role") == "assistant"
+        ]
+
+        if assistant_messages:
+            reply = assistant_messages[-1].get("content", "")
+        elif generated and isinstance(generated[-1], dict):
+            reply = generated[-1].get("content", "")
+        else:
+            reply = ""
+
+    else:
+        reply = str(generated)
+
+    return reply.strip()
+
+
+# ============================================================
+# MOOD CONFIGURATION
+# ============================================================
+
 MOODS = {
     "😊 Funny": {
         "key": "funny",
@@ -159,7 +220,8 @@ MOODS = {
         "prompt": (
             "You are Moodly, a funny and playful chatbot. "
             "Use light humor, witty responses, and occasional jokes. "
-            "Stay helpful and answer the user's actual question."
+            "Answer the user's actual question helpfully. "
+            "Keep responses natural and reasonably concise."
         ),
     },
     "😠 Angry": {
@@ -171,7 +233,7 @@ MOODS = {
             "You are Moodly, a comically angry and grumpy chatbot. "
             "Use exaggerated frustration and playful sarcasm, "
             "but never threaten or genuinely insult the user. "
-            "Still answer questions helpfully."
+            "Remain helpful and answer the actual question."
         ),
     },
     "🥹 Sad": {
@@ -180,9 +242,9 @@ MOODS = {
         "description": "Soft, emotional and thoughtful responses.",
         "color": "#93c5fd",
         "prompt": (
-            "You are Moodly, a gentle, sad and emotional chatbot. "
-            "Use a soft, reflective and slightly melancholic tone. "
-            "Remain supportive, clear, and helpful."
+            "You are Moodly, a gentle and reflective chatbot. "
+            "Use a soft, thoughtful and slightly melancholic tone. "
+            "Remain supportive, clear and helpful."
         ),
     },
     "✨ Friendly": {
@@ -192,21 +254,26 @@ MOODS = {
         "color": "#c4b5fd",
         "prompt": (
             "You are Moodly, a friendly and supportive chatbot. "
-            "Be warm, clear, conversational and helpful."
+            "Be warm, clear, conversational and helpful. "
+            "Answer questions directly in a natural tone."
         ),
     },
 }
 
+# ============================================================
+# SESSION STATE
+# ============================================================
 
-# ---------------- SESSION STATE ----------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "active_mood" not in st.session_state:
     st.session_state.active_mood = "😊 Funny"
 
+# ============================================================
+# SIDEBAR
+# ============================================================
 
-# ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.markdown("## 💜 Moodly AI")
     st.caption("Your conversation, your mood.")
@@ -214,15 +281,18 @@ with st.sidebar:
 
     st.markdown("### 🎭 Choose your mood")
 
+    mood_options = list(MOODS.keys())
+
     selected_mood = st.radio(
         "Chat personality",
-        options=list(MOODS.keys()),
-        index=list(MOODS.keys()).index(
+        options=mood_options,
+        index=mood_options.index(
             st.session_state.active_mood
         ),
         label_visibility="collapsed",
     )
 
+    # Clear the conversation when the personality changes.
     if selected_mood != st.session_state.active_mood:
         st.session_state.active_mood = selected_mood
         st.session_state.messages = []
@@ -259,7 +329,7 @@ with st.sidebar:
         "Response length",
         min_value=50,
         max_value=300,
-        value=150,
+        value=100,
         step=25,
     )
 
@@ -267,25 +337,30 @@ with st.sidebar:
         "Creativity",
         min_value=0.1,
         max_value=1.2,
-        value=0.8,
+        value=0.7,
         step=0.1,
     )
 
-    st.caption("Higher creativity produces more varied responses.")
+    st.caption(
+        "Higher creativity can produce more varied responses."
+    )
 
     st.divider()
 
-    if st.button("🗑️ Clear conversation", use_container_width=True):
+    if st.button(
+        "🗑️ Clear conversation",
+        use_container_width=True,
+    ):
         st.session_state.messages = []
         st.rerun()
 
     st.markdown(
-        """
+        f"""
         <div class="small-note">
             MODEL<br>
-            SmolLM2-1.7B-Instruct<br><br>
+            SmolLM2-135M-Instruct<br><br>
             RUNNING MODE<br>
-            Local inference on your computer<br><br>
+            Cloud CPU/GPU inference<br><br>
             API KEY<br>
             Not required
         </div>
@@ -293,8 +368,10 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
+# ============================================================
+# HERO HEADER
+# ============================================================
 
-# ---------------- HERO HEADER ----------------
 st.markdown(
     """
     <div class="hero">
@@ -304,27 +381,42 @@ st.markdown(
             One chatbot. Different personalities. Endless conversations.
             Choose your mood and let the conversation begin.
         </p>
-        <div class="status">● Local model · No API key required</div>
+        <div class="status">● Cloud model · No API key required</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-# ---------------- CHAT HEADER ----------------
+# ============================================================
+# CHAT HEADER
+# ============================================================
+
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.markdown(f"### {mood['emoji']} Chatting in {selected_mood} mode")
+    st.markdown(
+        f"### {mood['emoji']} Chatting in {selected_mood} mode"
+    )
 
 with col2:
     st.markdown(
-        f"<div style='text-align:right;color:#aaa9c5;"
-        f"padding-top:12px;font-size:13px'>"
-        f"💬 {len(st.session_state.messages)} messages</div>",
+        f"""
+        <div style="
+            text-align:right;
+            color:#aaa9c5;
+            padding-top:12px;
+            font-size:13px;
+        ">
+            💬 {len(st.session_state.messages)} messages
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
-# ---------------- WELCOME MESSAGE ----------------
+# ============================================================
+# WELCOME SCREEN AND SUGGESTED PROMPTS
+# ============================================================
+
 if not st.session_state.messages:
     st.markdown(
         """
@@ -358,29 +450,40 @@ if not st.session_state.messages:
 
     for i, suggestion in enumerate(suggestions):
         with suggestion_cols[i]:
-            if st.button(suggestion, use_container_width=True):
+            if st.button(
+                suggestion,
+                use_container_width=True,
+                key=f"suggestion_{i}",
+            ):
                 st.session_state.pending_prompt = suggestion
                 st.rerun()
 
+# ============================================================
+# DISPLAY PREVIOUS MESSAGES
+# ============================================================
 
-# ---------------- DISPLAY CHAT HISTORY ----------------
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# ============================================================
+# CHAT INPUT
+# ============================================================
 
-# ---------------- CHAT INPUT ----------------
 prompt = st.chat_input("Type your message here...")
 
+# Handle a suggested prompt button click.
 if "pending_prompt" in st.session_state:
     prompt = st.session_state.pop("pending_prompt")
 
+# ============================================================
+# GENERATE RESPONSE
+# ============================================================
 
-# ---------------- GENERATE RESPONSE ----------------
-if prompt:
-    if prompt.strip() == "":
-        st.stop()
+if prompt and prompt.strip():
+    prompt = prompt.strip()
 
+    # Store and display the user's message.
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
@@ -389,9 +492,13 @@ if prompt:
         st.markdown(prompt)
 
     try:
-        with st.spinner(f"{mood['emoji']} Moodly is thinking..."):
+        with st.spinner(
+            f"{mood['emoji']} Moodly is thinking..."
+        ):
+            # Load the model when the first response is requested.
             model = load_chatbot()
 
+            # Include the mood instructions and recent chat history.
             conversation = [
                 {
                     "role": "system",
@@ -399,32 +506,25 @@ if prompt:
                 }
             ]
 
-            # Keep recent conversation history for context.
             conversation.extend(
                 st.session_state.messages[-12:]
             )
 
-            result = model(
-                conversation,
-                max_new_tokens=max_tokens,
-                do_sample=True,
+            # Generate and extract the response.
+            reply = generate_reply(
+                model=model,
+                conversation=conversation,
+                max_tokens=max_tokens,
                 temperature=temperature,
-                return_full_text=True,
             )
 
-            generated = result[0]["generated_text"]
-
-            # Chat-formatted generation returns a list of messages.
-            if isinstance(generated, list):
-                reply = generated[-1]["content"]
-            else:
-                reply = str(generated)
-
-            reply = reply.strip()
-
             if not reply:
-                reply = "I couldn't generate a reply. Please try again."
+                reply = (
+                    "I couldn't generate a reply this time. "
+                    "Please try a different message."
+                )
 
+        # Save the assistant's response.
         st.session_state.messages.append(
             {"role": "assistant", "content": reply}
         )
@@ -434,10 +534,10 @@ if prompt:
 
     except Exception as error:
         st.error(
-            "Something went wrong while generating the response. "
-            "Check your internet connection for the initial model "
-            "download and check your installed packages."
+            "Moodly couldn't generate a response. "
+            "Please try again or check the deployment logs."
         )
+
         with st.expander("Technical details"):
             st.code(str(error))
 
@@ -448,14 +548,23 @@ if prompt:
         ):
             st.session_state.messages.pop()
 
+# ============================================================
+# FOOTER
+# ============================================================
 
-# ---------------- FOOTER ----------------
 st.markdown("---")
+
 st.markdown(
     """
-    <div style="text-align:center;color:#777a99;font-size:12px">
+    <div style="
+        text-align:center;
+        color:#777a99;
+        font-size:12px;
+    ">
         Made with 💜 using Streamlit & Hugging Face Transformers
-        <br>Responses are generated locally and may occasionally be inaccurate.
+        <br>
+        Responses are generated by a language model and may occasionally
+        be inaccurate.
     </div>
     """,
     unsafe_allow_html=True,
